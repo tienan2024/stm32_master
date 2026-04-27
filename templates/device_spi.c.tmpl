@@ -1,0 +1,67 @@
+/**
+ * @file {{MODULE_NAME}}.c
+ * @brief {{MODULE_NAME}} SPI 设备驱动
+ * @date {{DATE}}
+ */
+
+#include "{{MODULE_NAME}}.h"
+#include "spi.h"
+
+/* CS 引脚定义 */
+#define {{MODULE_NAME_UPPER}}_CS_PORT  GPIOA
+#define {{MODULE_NAME_UPPER}}_CS_PIN   GPIO_PIN_4
+
+static SPI_HandleTypeDef *{{MODULE_NAME}}_hspi = NULL;
+static GPIO_TypeDef *{{MODULE_NAME}}_cs_port = {{MODULE_NAME_UPPER}}_CS_PORT;
+static uint16_t {{MODULE_NAME}}_cs_pin = {{MODULE_NAME_UPPER}}_CS_PIN;
+
+/**
+ * @brief {{MODULE_NAME}}初始化
+ * @param hspi SPI 句柄
+ * @param cs_port CS 引脚端口
+ * @param cs_pin CS 引脚编号
+ * @return 0: 成功, -1: 失败
+ */
+int {{MODULE_NAME}}_init(SPI_HandleTypeDef *hspi, GPIO_TypeDef *cs_port, uint16_t cs_pin)
+{
+    {{MODULE_NAME}}_hspi = hspi;
+    {{MODULE_NAME}}_cs_port = cs_port;
+    {{MODULE_NAME}}_cs_pin = cs_pin;
+    /* TODO: 添加初始化代码 */
+    return 0;
+}
+
+/**
+ * @brief {{MODULE_NAME}}SPI 传输
+ * @param tx_data 发送数据缓冲区
+ * @param rx_data 接收数据缓冲区
+ * @param len 数据长度
+ * @return 0: 成功, -1: 失败
+ */
+int {{MODULE_NAME}}_transfer(uint8_t *tx_data, uint8_t *rx_data, uint16_t len)
+{
+    /* TODO: 实现传输逻辑 */
+    return 0;
+}
+
+/**
+ * @brief {{MODULE_NAME}}读取数据
+ * @param data 数据缓冲区
+ * @param len 读取长度
+ * @return 0: 成功, -1: 失败
+ */
+int {{MODULE_NAME}}_read(uint8_t *data, uint16_t len)
+{
+    return {{MODULE_NAME}}_transfer(data, data, len);
+}
+
+/**
+ * @brief {{MODULE_NAME}}写入数据
+ * @param data 数据指针
+ * @param len 数据长度
+ * @return 0: 成功, -1: 失败
+ */
+int {{MODULE_NAME}}_write(uint8_t *data, uint16_t len)
+{
+    return {{MODULE_NAME}}_transfer(data, NULL, len);
+}

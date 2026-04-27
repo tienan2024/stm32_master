@@ -1,0 +1,57 @@
+/**
+ * @file {{MODULE_NAME}}.c
+ * @brief {{MODULE_NAME}} ADC 设备驱动
+ * @date {{DATE}}
+ */
+
+#include "{{MODULE_NAME}}.h"
+#include "adc.h"
+
+static ADC_HandleTypeDef *{{MODULE_NAME}}_hadc = NULL;
+static uint32_t {{MODULE_NAME}}_vref = 3300;  /* mV, 默认 3.3V */
+
+/**
+ * @brief {{MODULE_NAME}}初始化
+ * @param hadc ADC 句柄
+ * @return 0: 成功, -1: 失败
+ */
+int {{MODULE_NAME}}_init(ADC_HandleTypeDef *hadc)
+{
+    {{MODULE_NAME}}_hadc = hadc;
+    /* TODO: 添加初始化代码 */
+    return 0;
+}
+
+/**
+ * @brief {{MODULE_NAME}}读取原始 ADC 值
+ * @param channel ADC 通道
+ * @return 原始 ADC 值 (0-4095 for 12-bit ADC)
+ */
+uint32_t {{MODULE_NAME}}_read(uint32_t channel)
+{
+    uint32_t value = 0;
+    /* TODO: 实现 ADC 读取逻辑 */
+    return value;
+}
+
+/**
+ * @brief {{MODULE_NAME}}转换为电压值
+ * @param adc_value 原始 ADC 值
+ * @param vref 参考电压 (mV)
+ * @return 电压值 (mV)
+ */
+uint32_t {{MODULE_NAME}}_to_voltage(uint32_t adc_value, uint32_t vref)
+{
+    return (adc_value * vref) / 4095;
+}
+
+/**
+ * @brief {{MODULE_NAME}}读取电压值
+ * @param channel ADC 通道
+ * @return 电压值 (mV)
+ */
+uint32_t {{MODULE_NAME}}_read_voltage(uint32_t channel)
+{
+    uint32_t adc_value = {{MODULE_NAME}}_read(channel);
+    return {{MODULE_NAME}}_to_voltage(adc_value, {{MODULE_NAME}}_vref);
+}

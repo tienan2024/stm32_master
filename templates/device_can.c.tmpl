@@ -1,0 +1,59 @@
+/**
+ * @file {{MODULE_NAME}}.c
+ * @brief {{MODULE_NAME}} CAN 设备驱动
+ * @date {{DATE}}
+ */
+
+#include "{{MODULE_NAME}}.h"
+#include "can.h"
+
+static CAN_HandleTypeDef *{{MODULE_NAME}}_hcan = NULL;
+
+/**
+ * @brief {{MODULE_NAME}}初始化
+ * @param hcan CAN 句柄
+ * @return 0: 成功, -1: 失败
+ */
+int {{MODULE_NAME}}_init(CAN_HandleTypeDef *hcan)
+{
+    {{MODULE_NAME}}_hcan = hcan;
+    /* TODO: 添加初始化代码 */
+    return 0;
+}
+
+/**
+ * @brief {{MODULE_NAME}}发送 CAN 帧
+ * @param id CAN ID
+ * @param data 数据指针
+ * @param len 数据长度 (最大 8)
+ * @return 0: 成功, -1: 失败
+ */
+int {{MODULE_NAME}}_send(uint32_t id, uint8_t *data, uint8_t len)
+{
+    CAN_TxHeaderTypeDef header;
+    uint32_t tx_mailbox;
+
+    header.StdId = id;
+    header.ExtId = 0;
+    header.IDE = CAN_ID_STD;
+    header.RTR = CAN_RTR_DATA;
+    header.DLC = len;
+
+    /* TODO: 实现发送逻辑 */
+    return 0;
+}
+
+/**
+ * @brief {{MODULE_NAME}}接收 CAN 帧
+ * @param id CAN ID 指针
+ * @param data 数据缓冲区指针
+ * @param len 数据长度指针
+ * @return 0: 成功, -1: 无数据
+ */
+int {{MODULE_NAME}}_recv(uint32_t *id, uint8_t *data, uint8_t *len)
+{
+    CAN_RxHeaderTypeDef header;
+
+    /* TODO: 实现接收逻辑 */
+    return 0;
+}
