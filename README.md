@@ -2,24 +2,66 @@
 
 嵌入式 STM32 开发工作流，支持编译、烧录、调试、代码格式化和静态检查。
 
+## 项目结构
+
+```
+stm32_master/
+├── scripts/          # 编译、烧录、调试脚本
+│   ├── build_flash.ps1
+│   └── start_debug.ps1
+├── monitors/         # 串口监控工具
+│   ├── monitor_web.ps1
+│   ├── monitor_serial.ps1
+│   └── serial_monitor.js
+├── docs/             # 文档
+├── templates/        # 代码模板
+└── vscode-extension/ # VS Code 扩展
+```
+
 ## 快速开始
 
 ### 编译 + 烧录
 ```powershell
-.\build_flash.ps1 -ProjectDir "F:\path\to\project"
+.\scripts\build_flash.ps1 -ProjectDir "F:\path\to\project"
 ```
 
 ### 调试
 ```powershell
-.\start_debug.ps1 -ProjectDir "F:\path\to"           # VSCode 调试
-.\start_debug.ps1 -ProjectDir "F:\path\to" -GDBClient  # GDB 终端调试
-.\start_debug.ps1 -ProjectDir "F:\path\to" -RTT      # RTT Viewer
-.\start_debug.ps1 -ProjectDir "F:\path\to" -Shell     # 串口 Shell
+.\scripts\start_debug.ps1 -ProjectDir "F:\path\to"           # VSCode 调试
+.\scripts\start_debug.ps1 -ProjectDir "F:\path\to" -GDBClient  # GDB 终端调试
+.\scripts\start_debug.ps1 -ProjectDir "F:\path\to" -RTT      # RTT Viewer
+.\scripts\start_debug.ps1 -ProjectDir "F:\path\to" -Shell     # 串口 Shell
 ```
+
+### 串口实时监控
+
+#### 方式1：VS Code 扩展
+```powershell
+cd vscode-extension
+setup.bat
+```
+
+#### 方式2：Web UI 模式
+```powershell
+.\monitors\monitor_web.ps1 -SerialPort "COM3"
+```
+
+#### 方式3：命令行模式
+```powershell
+.\monitors\monitor_serial.ps1 -Port "COM3" -LogFile "debug.log"
+```
+
+## 硬编码路径提示
+
+> **Keil UV4 默认路径:** `D:\keil5\UV4\UV4.exe`
+> 如安装在其他位置，使用 `-UV4Path` 参数覆盖
+
+> **Web UI 默认端口:** `8080`
+> 如被占用，使用 `-Port` 参数指定其他端口
 
 ## 工具链路径
 
-所有工具自动检测来自 STM32Cube bundles：
+自动检测（来自 STM32Cube bundles）：
 
 | 工具 | 路径模式 |
 |------|---------|
@@ -27,17 +69,18 @@
 | STM32_Programmer_CLI | `%LOCALAPPDATA%\stm32cube\bundles\programmer\*\bin\STM32_Programmer_CLI.exe` |
 | arm-none-eabi-gdb | `%LOCALAPPDATA%\stm32cube\bundles\gnu-gdb-for-stm32\*\bin\arm-none-eabi-gdb.exe` |
 | ST-LINK_gdbserver | `%LOCALAPPDATA%\stm32cube\bundles\stlink-gdbserver\*\bin\ST-LINK_gdbserver.exe` |
+| Keil UV4 | `D:\keil5\UV4\UV4.exe`（可覆盖） |
 
 ## GDB 调试命令
 
 ```bash
 target remote localhost:61234    # 连接
-file build/Debug/test2.elf      # 加载符号
-break main                       # 断点
-continue                         # 运行
+file build/Debug/test2.elf     # 加载符号
+break main                      # 断点
+continue                        # 运行
 next                            # 单步
 print <var>                     # 打印变量
-info registers                   # 寄存器
+info registers                  # 寄存器
 ```
 
 ## 模板文件
@@ -59,8 +102,6 @@ info registers                   # 寄存器
 
 ## 占位符
 
-模板中使用以下占位符：
-
 | 占位符 | 说明 |
 |--------|------|
 | `{{MODULE_NAME}}` | 模块名（小写） |
@@ -73,24 +114,18 @@ info registers                   # 寄存器
 ## 格式化
 
 ```bash
-# 安装 clang-format
 winget install LLVM.LLVM
-
-# 格式化代码
 clang-format -i Core/Src/main.c
 ```
 
 ## 静态检查
 
 ```bash
-# 安装 cppcheck
 winget install cppcheck.cppcheck
-
-# 检查代码
 cppcheck --enable=warning,style fal/ common/
 ```
 
-## 验证的组件
+## 验证组件
 
 | 组件 | 版本 |
 |------|------|
@@ -98,4 +133,15 @@ cppcheck --enable=warning,style fal/ common/
 | STM32_Programmer_CLI | 2.22.0+st.1 |
 | arm-none-eabi-gdb | 14.3.1+st.2 |
 | ST-LINK_gdbserver | 7.13.0+st.3 |
+| Keil UV4 | 5.25.2+ |
 | 芯片 | STM32F103 High-density |
+
+## 常见问题
+
+| 问题 | 解决方案 |
+|------|---------|
+| "No ST-Link found" | 检查 USB 连接 |
+| "ELF not found" | 先执行编译 |
+| 串口端口被占用 | 关闭其他串口程序 |
+| Keil UV4 not found | 检查 `D:\keil5\UV4\UV4.exe` 或用 `-UV4Path` 指定 |
+| Web 端口 8080 被占用 | 用 `-Port` 指定其他端口 |
