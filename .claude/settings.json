@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/c/Users/ROG/.claude/skills/stm32_master/**)",
+      "Bash(npm install *)",
+      "Edit(~/.claude/skills/stm32_master/**)",
+      "Bash(\"/c/Users/ROG/AppData/Local/Programs/Microsoft VS Code/bin/code\" --uninstall-extension stm32dev.stm32-serial-monitor --force)",
+      "Bash(\"/c/Users/ROG/AppData/Local/Programs/Microsoft VS Code/bin/code\" --install-extension stm32-serial-monitor-1.0.0.vsix)",
+      "Bash(npm run *)",
+      "Bash(vsce package *)",
+      "WebFetch(domain:minimax-algeng-chat-tts.oss-cn-wulanchabu.aliyuncs.com)",
+      "Bash(\"/c/Users/ROG/AppData/Local/Programs/Microsoft VS Code/bin/code\" --extensionDevelopmentPath=. --extensionHostDebug)"
+    ]
+  }
+}

@@ -15,14 +15,16 @@ description: Use when compiling any STM32 project via CMake/Ninja or Keil MDK, f
 | **Debug** | GDB 调试、RTT Viewer、串口 Shell |
 | **Format** | clang-format 代码格式化 |
 | **Lint** | cppcheck 静态检查 + AI 误报过滤 |
+| **Safety** | GPIO 引脚冲突检查，防止设备损坏 |
 
 ## 目录结构
 
 ```
 stm32_master/
 ├── scripts/          # 编译、烧录、调试脚本
-│   ├── build_flash.ps1   # 一键编译+烧录
-│   └── start_debug.ps1   # 启动调试会话
+│   ├── build_flash.ps1       # 一键编译+烧录
+│   ├── start_debug.ps1       # 启动调试会话
+│   └── check_gpio_safety.ps1 # GPIO 引脚安全检查 ⚠️
 ├── monitors/         # 串口监控工具
 │   ├── monitor_web.ps1       # Web UI 模式
 │   ├── monitor_serial.ps1    # 命令行模式
@@ -44,7 +46,12 @@ stm32_master/
 
 # 仅烧录（跳过编译）
 .\scripts\build_flash.ps1 -ProjectDir "F:\path\to\project" -SkipBuild
+
+# 跳过 GPIO 安全检查（危险! 仅在确认安全后使用）
+.\scripts\build_flash.ps1 -ProjectDir "F:\path\to\project" -SkipSafetyCheck
 ```
+
+> **⚠️ 安全检查:** 烧录前会自动运行 GPIO 引脚安全检查。如存在严重错误会阻止烧录，防止硬件损坏。
 
 ### 支持的项目类型
 
@@ -491,6 +498,99 @@ cppcheck -I Core/Inc -I Drivers/CMSIS/Core/Include fal/motor/motor.c
 
 ---
 
+## safety - GPIO & 外设模块安全检查 ⚠️
+
+### 功能说明
+
+> **高危警告：** 引脚或外设模块配置错误可能导致芯片和外设损坏！每次修改配置后建议执行此检查。
+
+检测可能导致硬件损坏的问题：
+
+| 检查项 | 说明 | 风险等级 |
+|--------|------|----------|
+| 输入/输出冲突 | 同一引脚同时配置为输入和输出 | 🔴 严重 |
+| 浮空输入 | 输入引脚无上拉/下拉，可能产生噪声 | 🟡 中等 |
+| 时钟未启用 | GPIO 已使用但时钟未使能 | 🟡 中等 |
+| 复用功能冲突 | 同一引脚分配给多个外设 | 🔴 严重 |
+| **外置模块冲突** | I2C/SPI/UART 引脚配置错误 | 🔴 严重 |
+| **电压不匹配** | 3.3V MCU 连接 5V 模块 | 🔴 严重 |
+
+### 支持的外置模块检测
+
+| 模块类型 | 检测的设备 | 潜在风险 |
+|----------|-----------|---------|
+| **I2C** | BMP280, MPU6050, OLED, AHT10, ADS1115 | SCL/SDA 配置为 GPIO 输出会损坏设备 |
+| **SPI** | SD卡, W25Q Flash, ST7789, nRF24L01 | MOSI 配置为输入会导致通信失败 |
+| **UART** | GPS, HC-05, ESP8266, LoRa | TX 配置为输入会导致数据丢失 |
+| **ADC** | Joystick, ACS712, Load Cell | 配置为输出会损坏传感器 |
+| **电机驱动** | L298N, TB6612, PCA9685 | PWM 引脚过载可能损坏 MCU |
+
+### 使用方式
+
+```powershell
+# 检查项目 GPIO 和外设模块配置
+.\scripts\check_gpio_safety.ps1 -ProjectDir "F:\path\to\project"
+
+# 详细输出
+.\scripts\check_gpio_safety.ps1 -ProjectDir "F:\path\to\project" -Detailed
+```
+
+### 常见问题
+
+| 问题 | 说明 |
+|------|------|
+| `GPIO_MODE_INPUT` + `GPIO_MODE_OUTPUT_PP` | 同一引脚冲突配置 |
+| 输入无 `PULLUP`/`PULLDOWN` | 浮空引脚易受干扰 |
+| I2C 引脚配置为 GPIO 输出 | 会损坏 I2C 设备 |
+| 5V 传感器无分压电路 | 会损坏 3.3V ADC 引脚 |
+| `__HAL_RCC_GPIOx_CLK_ENABLE()` 未调用 | 外设可能不工作 |
+
+### 输出示例
+
+```
+========================================
+  STM32 GPIO 与外设模块安全检查
+========================================
+
+扫描目录: F:\path\to\project
+
+[1/4] 正在分析源文件...
+[2/4] 外置模块检测完成...
+[3/4] 生成报告...
+
+========================================
+  安全报告
+========================================
+
+📦 检测到外置模块 (2)
+   [Core/Src/i2c.c] 检测到外置 I2C 模块: MPU6050
+   [Core/Src/spi.c] 检测到外置 SPI 模块: ST7789
+
+❌ 严重错误 (1)
+   这些错误将导致硬件损坏!
+   [Core/Src/i2c.c] I2C 引脚 GPIO_PIN_6 配置为输出 - 会损坏 I2C 设备!
+
+⚠️  警告 (1)
+   [Core/Src/main.c] 检测到 5V 传感器 - 请确认 ADC 引脚可承受 5V 或使用分压电路!
+
+========================================
+  建议:
+  🔴 请勿烧录 - 请先修复严重错误!
+     - 外置模块可能已损坏
+     - 检查引脚复用配置
+     - 验证电压兼容性 (3.3V vs 5V)
+========================================
+```
+
+### 建议触发时机
+
+1. **每次修改 GPIO 配置后**
+2. **添加新的外置模块后**
+3. **烧录固件前**（防止硬件损坏）
+4. **项目移植到不同芯片时**
+
+---
+
 # 快速参考
 
 ## 工具路径（自动检测）
@@ -508,6 +608,7 @@ cppcheck -I Core/Inc -I Drivers/CMSIS/Core/Include fal/motor/motor.c
 | 任务 | 命令 |
 |------|------|
 | 编译+烧录 | `.\scripts\build_flash.ps1 -ProjectDir "<path>"` |
+| GPIO 安全检查 | `.\scripts\check_gpio_safety.ps1 -ProjectDir "<path>"` ⚠️ |
 | 编译 (CMake) | `cmake --build <dir>/build --config Debug` |
 | 烧录 | `STM32_Programmer_CLI.exe -c port=SWD --download <elf> -v` |
 | Web UI 监控 | `.\monitors\monitor_web.ps1 -SerialPort "COM3"` |

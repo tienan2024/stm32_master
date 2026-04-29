@@ -11,7 +11,8 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$ProjectDir,
 
-    [switch]$SkipBuild,      # Skip build, only flash
+    [switch]$SkipBuild,         # Skip build, only flash
+    [switch]$SkipSafetyCheck,  # Skip GPIO safety check (危险! 仅在确认安全后使用)
 
     # -------- 可选：工具路径覆盖 --------
     [string]$UV4Path,        # Keil MDK 路径，如 "C:\Keil\UV4\UV4.exe"
@@ -242,8 +243,38 @@ if (-not $elf -or -not (Test-Path $elf)) {
 }
 Write-Host "  Found: $elf" -ForegroundColor Green
 
+# ----------------------------------------
+# Step 4.5: GPIO Safety Check
+# ----------------------------------------
+if (-not $SkipSafetyCheck) {
+    Write-Host ""
+    Write-Host "[4.5/6] Running GPIO Safety Check..." -ForegroundColor Yellow
+    $safetyScript = Join-Path $PSScriptRoot "check_gpio_safety.ps1"
+
+    if (Test-Path $safetyScript) {
+        $safetyResult = & $safetyScript -ProjectDir $ProjectDir 2>&1
+        $safeExitCode = $LASTEXITCODE
+        $safetyResult | Out-Host
+
+        if ($safeExitCode -ne 0) {
+            Write-Host ""
+            Write-Host "========================================" -ForegroundColor Red
+            Write-Host "  ⚠️  安全检查失败 - 存在严重错误!" -ForegroundColor Red
+            Write-Host "  请修复上述问题后重试" -ForegroundColor Red
+            Write-Host "  或使用 -SkipSafetyCheck 跳过检查 (危险!)" -ForegroundColor Gray
+            Write-Host "========================================" -ForegroundColor Red
+            exit 1
+        }
+    } else {
+        Write-Host "  ⚠️  Safety check script not found, skipping..." -ForegroundColor Yellow
+    }
+} else {
+    Write-Host ""
+    Write-Host "[4.5/6] Skipping GPIO Safety Check (⚠️ 危险!)..." -ForegroundColor Yellow
+}
+
 Write-Host ""
-Write-Host "[5/5] Flashing to device..." -ForegroundColor Yellow
+Write-Host "[5/6] Flashing to device..." -ForegroundColor Yellow
 
 Write-Host ""
 Write-Host "  Device Info:" -ForegroundColor Cyan
@@ -268,4 +299,13 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "  FAILED: Flash failed" -ForegroundColor Red
     Write-Host "========================================" -ForegroundColor Red
     exit 1
+}
+
+# ----------------------------------------
+# Step 6/6: Warning if safety check was skipped
+# ----------------------------------------
+if ($SkipSafetyCheck) {
+    Write-Host ""
+    Write-Host "⚠️  注意: GPIO 安全检查已被跳过!" -ForegroundColor Yellow
+    Write-Host "   请确保引脚配置正确，避免硬件损坏" -ForegroundColor Yellow
 }
