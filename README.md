@@ -8,7 +8,8 @@
 stm32_master/
 ├── scripts/          # 编译、烧录、调试脚本
 │   ├── build_flash.ps1
-│   └── start_debug.ps1
+│   ├── start_debug.ps1
+│   └── check_gpio_safety.ps1  # GPIO 安全检查
 ├── monitors/         # 串口监控工具
 │   ├── monitor_web.ps1
 │   ├── monitor_serial.ps1
@@ -18,11 +19,67 @@ stm32_master/
 └── vscode-extension/ # VS Code 扩展
 ```
 
+## 工作流程图
+
+### 编译 + 烧录流程
+
+```mermaid
+flowchart TD
+    A[开始] --> B{选择项目类型}
+    B -->|Keil MDK| C[使用 UV4 编译]
+    B -->|CMake/Ninja| D[使用 Ninja 编译]
+    C --> E[生成 ELF/AXF]
+    D --> E
+    E --> F[Step 4.5: GPIO 安全检查]
+    F -->|检查失败| G[阻止烧录<br/>显示错误]
+    F -->|检查通过| H[烧录固件]
+    H --> I[成功]
+    G --> J[修复错误后重试]
+```
+
+### 调试流程
+
+```mermaid
+flowchart TD
+    A[开始] --> B{选择调试模式}
+    B -->|VS Code| C[按 F5 启动调试]
+    B -->|GDB 终端| D[启动 GDB Server]
+    B -->|RTT Viewer| E[启动 J-Link RTT]
+    B -->|串口 Shell| F[自动检测 COM 端口]
+    C --> G[连接 ST-Link]
+    D --> G
+    E --> G
+    F --> G
+    G --> H[设置断点]
+    H --> I[单步调试/继续运行]
+```
+
+### 串口监控方式
+
+```mermaid
+flowchart LR
+    A[STM32 设备] --> B{选择监控方式}
+    B --> C[VS Code 扩展]
+    B --> D[Web UI 模式]
+    B --> E[命令行模式]
+    C --> F[点击图标启动]
+    D --> G[自动打开浏览器]
+    E --> H[保存日志文件]
+```
+
 ## 快速开始
 
 ### 编译 + 烧录
 ```powershell
 .\scripts\build_flash.ps1 -ProjectDir "F:\path\to\project"
+
+# 跳过安全检查（危险!）
+.\scripts\build_flash.ps1 -ProjectDir "F:\path\to\project" -SkipSafetyCheck
+```
+
+### GPIO 安全检查（可独立运行）
+```powershell
+.\scripts\check_gpio_safety.ps1 -ProjectDir "F:\path\to\project"
 ```
 
 ### 调试
