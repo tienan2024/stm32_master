@@ -103,6 +103,8 @@ setup.bat
 .\monitors\monitor_web.ps1 -SerialPort "COM3"
 ```
 
+Web UI 功能：端口选择、波特率选择（9600-921600）、手动发送、回车键发送、清空、下载日志。
+
 #### 方式3：命令行模式
 ```powershell
 .\monitors\monitor_serial.ps1 -Port "COM3" -LogFile "debug.log"
