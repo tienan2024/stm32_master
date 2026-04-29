@@ -1,12 +1,31 @@
-const SerialPort = require('serialport');
+const { SerialPort } = require('serialport');
 const http = require('http');
 const url = require('url');
 
-const DEFAULT_PORT = process.argv[2] || 'COM5';
-const DEFAULT_BAUD = parseInt(process.argv[3]) || 115200;
-const DEFAULT_WEB_PORT = process.argv[4] || 8080;
+let arg3 = process.argv[3];
+let arg4 = process.argv[4];
 
-let currentPort = DEFAULT_PORT;
+// Handle: node serial_monitor.js COM5 8080 (web port only)
+// vs:      node serial_monitor.js COM5 115200 8080 (baud + web port)
+let DEFAULT_PORT;
+let DEFAULT_BAUD;
+let DEFAULT_WEB_PORT;
+
+if (arg3 && arg3.match(/^COM/i)) {
+    // arg3 is a COM port
+    DEFAULT_PORT = arg3;
+    DEFAULT_BAUD = parseInt(arg4) || 115200;
+    DEFAULT_WEB_PORT = parseInt(process.argv[5]) || 8080;
+} else if (arg3 && !arg4) {
+    // Only 2 args and arg3 looks like a port number - treat as web port
+    DEFAULT_PORT = 'COM5';
+    DEFAULT_BAUD = 115200;
+    DEFAULT_WEB_PORT = parseInt(arg3);
+} else {
+    DEFAULT_PORT = 'COM5';
+    DEFAULT_BAUD = 115200;
+    DEFAULT_WEB_PORT = 8080;
+}
 let currentBaud = DEFAULT_BAUD;
 let serialPort = null;
 let connected = false;
